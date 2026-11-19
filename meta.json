@@ -1,0 +1,29 @@
+{
+  "scope": "flow",
+  "today": {
+    "text": "every install accepts the consent screen, lands on the shelf under the notification and tracking prompts at once, and meets one offer only after tapping a locked issue",
+    "source": "audit_frames"
+  },
+  "prices": {
+    "monthly": "25,99 € a month for 3 months, then 54,90 € a month",
+    "single_issue": "3,99 €",
+    "trial": "none",
+    "source": "F.A.Z. Kiosk in-app offer screen, German storefront, recorded 19 November 2026"
+  },
+  "asks": [
+    "How do you like to read the paper?",
+    "Which section do you read first?"
+  ],
+  "paywall": {
+    "headline": "Wählen Sie Ihr Angebot für die digitale Ausgabe",
+    "uses_answers": false
+  },
+  "rebuild": "the format and first section a reader picks name the offer's headline, and the Monatsabo arrives selected with 54,90 € from month four on its own line",
+  "ideas": [
+    { "n": 1, "title": "Offer the subscription once, at the end of first launch", "screen": "Offer", "outcome": "CR +10–20%" },
+    { "n": 2, "title": "Name their section and format in the headline", "screen": "Offer", "outcome": "CR +15–20%" },
+    { "n": 3, "title": "Select the Monatsabo for them and print what month four costs", "screen": "Offer", "outcome": "CR +5–15%" },
+    { "n": 4, "title": "Put your 4.5 stars and a reader’s words next to the price", "screen": "Offer", "outcome": "CR +10–15%" },
+    { "n": 5, "title": "Ask for notifications after the offer, as an 18:00 alert", "screen": "Shelf", "outcome": "CR +10–15%" }
+  ]
+}

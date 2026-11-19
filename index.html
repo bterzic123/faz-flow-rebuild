@@ -1,0 +1,901 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Cache-Control" content="no-cache, must-revalidate">
+<meta name="color-scheme" content="light">
+<title>Growth Audit — F.A.Z. Kiosk</title>
+<meta name="description" content="F.A.Z. Kiosk puts tomorrow's paper in readers' hands at 18:00 the evening before. A new install never hears it. Here is a first launch that asks how they read, built in the Kiosk's own design.">
+<link rel="icon" href="img/icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Source+Sans+3:wght@400;600;700&family=Source+Serif+4:opsz,wght@8..60,400;8..60,600&display=swap" rel="stylesheet">
+<style>
+/* Shell: white, the Kiosk's ink, one soft grey, and the red of the Sonntagszeitung label as the one accent.
+   Phone: the app's #1E2224 shelf, #2C353D offer screen, #130C2F splash navy, #E6EAEB action bar. */
+:root{
+  color-scheme:only light;
+  --ink:#16181B; --ink-soft:#2A2D31; --muted:rgba(22,24,27,.62); --faint:rgba(22,24,27,.22); --line:rgba(22,24,27,.09);
+  --soft:#FAFAFA; --cream:#F1F2F3; --cream2:#E5E7E9; --white:#FFFFFF;
+  --gold:#B9001E; --gold-lift:#9A0019; --gold-soft:#FBE5E8; --navy:#130C2F;
+  --mark:linear-gradient(transparent 60%,rgba(185,0,30,.22) 60%);
+  --f:'Inter',system-ui,-apple-system,'Helvetica Neue',Arial,sans-serif;
+  --fp:'Source Sans 3',-apple-system,'Helvetica Neue',sans-serif;
+  --fs:'Source Serif 4',Georgia,'Times New Roman',serif;
+  --ease:cubic-bezier(.16,1,.3,1);
+}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html{scroll-behavior:smooth}
+html,body{overflow-x:clip}
+body{font-family:var(--f);color:var(--ink-soft);background:var(--white);font-size:16px;line-height:1.55;-webkit-font-smoothing:antialiased}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+a{color:inherit}
+img,video{display:block}
+em.g{font-style:normal;background:var(--mark);padding:0 2px}
+.hero em.g{background:none;color:#FF8A9A}
+.wrap{max-width:1200px;margin:0 auto;padding:0 40px}
+@media(max-width:700px){.wrap{padding:0 16px}}
+
+/* ---- top bar ---- */
+.nav{position:sticky;top:0;z-index:50;padding:12px 12px 0}
+.nav-in{max-width:1200px;margin:0 auto;padding:0 10px 0 22px;height:60px;display:flex;align-items:center;gap:14px;background:rgba(241,242,243,.86);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-radius:999px;box-shadow:0 1px 0 var(--line)}
+@media(max-width:700px){.nav-in{padding:0 8px 0 16px;gap:8px}}
+.logo{width:170px;height:24px;background:var(--ink);-webkit-mask:url(img/wordmark.png) left center/contain no-repeat;mask:url(img/wordmark.png) left center/contain no-repeat;flex:none}
+@media(max-width:400px){.logo{width:118px}}
+.nav-in .sep{width:1px;height:20px;background:var(--faint)}
+.nav-in .lbl{font-size:14px;color:var(--muted);white-space:nowrap}
+@media(max-width:760px){.nav-in .sep,.nav-in .lbl{display:none}}
+.tabs{margin-left:auto;display:flex;gap:2px}
+.tabs button{height:40px;padding:0 16px;border-radius:999px;font-size:15px;font-weight:500;color:var(--muted)}
+@media(max-width:400px){.tabs button{padding:0 10px;font-size:14px}}
+.tabs button.on{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(22,24,27,.1)}
+.demo{height:44px;padding:0 20px;border-radius:999px;background:var(--ink);color:#fff;font-size:15px;font-weight:500;display:flex;align-items:center;text-decoration:none;white-space:nowrap}
+.demo:hover{background:#000}
+@media(max-width:560px){.nav .demo{display:none}}
+.view{display:none}.view.on{display:block}
+
+/* ======================= OVERVIEW ======================= */
+.navy-bg{background:#130C2F}
+.hero-frame{margin:-72px 12px 0;border-radius:20px;overflow:hidden;position:relative;color:#fff;min-height:720px;display:flex;align-items:flex-end}
+.hero-frame::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(19,12,47,.94) 0%,rgba(19,12,47,.6) 55%,rgba(19,12,47,.15) 100%);pointer-events:none}
+.press{position:absolute;inset:-40px 0 0;display:flex;gap:34px;padding:0 24px;pointer-events:none;overflow:hidden}
+.press .pcol{flex:1;min-width:150px;display:flex;flex-direction:column;gap:22px;animation:rise linear infinite}
+.press .pcol span{font:600 22px/1.2 var(--fs);color:rgba(255,255,255,.13)}
+.press .pcol i{display:block;height:7px;border-radius:2px;background:rgba(255,255,255,.07)}
+.press .pcol b{font:400 13px/1 var(--fp);letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.16)}
+@keyframes rise{to{transform:translateY(-50%)}}
+@media(prefers-reduced-motion:reduce){.press .pcol{animation:none}}
+.hero-in{position:relative;z-index:2;width:100%;display:grid;grid-template-columns:1.25fr .75fr;gap:30px;align-items:end;padding-top:150px;padding-bottom:56px}
+@media(max-width:900px){.hero-frame{min-height:0}.hero-in{grid-template-columns:1fr;padding-top:120px;padding-bottom:36px}}
+.eyebrow{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.75);font-weight:500}
+.hero h1{font-size:clamp(38px,5.2vw,68px);line-height:1.04;font-weight:600;letter-spacing:-.03em;margin-top:16px;max-width:820px}
+.hero .lead{font-size:clamp(17px,1.7vw,19px);line-height:1.55;margin-top:20px;max-width:660px;color:rgba(255,255,255,.86)}
+.cta-row{display:flex;gap:10px;align-items:center;margin-top:28px;flex-wrap:wrap}
+.btn-w{height:50px;padding:0 24px;border-radius:999px;background:#fff;color:var(--ink);font-size:17px;font-weight:500;display:inline-flex;align-items:center;gap:10px}
+.btn-w:hover{background:var(--cream)}
+.btn-o{height:50px;padding:0 22px;border-radius:999px;background:rgba(255,255,255,.14);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);color:#fff;font-size:17px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.btn-o:hover{background:rgba(255,255,255,.24)}
+.byline{margin-top:16px;font-size:14px;color:rgba(255,255,255,.66)}
+.fan{position:relative;height:400px}
+.fan img{position:absolute;width:176px;aspect-ratio:9/19;object-fit:cover;object-position:top;border-radius:18px;border:4px solid #2C2C34;box-shadow:0 24px 60px rgba(0,0,0,.5)}
+.fan .j{width:84px;height:84px;border-radius:22px;border:2px solid rgba(255,255,255,.25);aspect-ratio:auto;left:40%;bottom:0;z-index:4}
+@media(max-width:900px){.fan{height:280px}.fan img{width:122px;border-width:3px;border-radius:13px}.fan .j{width:62px;height:62px;border-radius:16px}}
+
+.stats{margin:12px 12px 0;border-radius:20px;background:var(--cream)}
+.stats .wrap{display:grid;grid-template-columns:repeat(4,1fr)}
+.stat{padding:30px 18px;text-align:center;border-left:1px solid var(--line)}
+.stat:first-child{border-left:0}
+.stat b{display:block;font-size:38px;font-weight:600;letter-spacing:-.03em;line-height:1.1;color:var(--ink)}
+.stat b i{font-style:normal;color:var(--gold)}
+.stat span{display:block;font-size:14px;color:var(--muted);margin-top:6px;line-height:1.35}
+@media(max-width:800px){.stats .wrap{grid-template-columns:repeat(2,1fr)}.stat:nth-child(3){border-left:0}.stat{border-top:1px solid var(--line)}.stat:nth-child(-n+2){border-top:0}}
+
+.sec{padding:96px 0}
+@media(max-width:700px){.sec{padding:64px 0}}
+.sec-h{font-size:clamp(30px,3.9vw,48px);line-height:1.08;font-weight:600;letter-spacing:-.03em;max-width:900px;color:var(--ink)}
+.sec-h b{font-weight:600;color:var(--muted)}
+.sec-p{font-size:18px;line-height:1.6;color:var(--muted);margin-top:18px;max-width:780px}
+.kick{font-size:13px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:14px}
+.about{display:grid;grid-template-columns:1.2fr 1fr;gap:48px;align-items:start}
+@media(max-width:860px){.about{grid-template-columns:1fr}}
+.flowp{margin-top:26px;display:flex;flex-direction:column;gap:10px}
+.flowp div{display:flex;gap:12px;align-items:flex-start;font-size:16px;color:var(--ink-soft);line-height:1.45}
+.flowp i{font-style:normal;flex:none;width:22px;height:22px;border-radius:50%;background:var(--gold);color:#fff;display:grid;place-items:center;font-size:12px;margin-top:1px}
+.flowp b{font-weight:600;color:var(--ink)}
+.flowp .k2{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-top:8px}
+.note{background:var(--cream);border-radius:16px;padding:22px 24px}
+.note h4{font-size:17px;font-weight:600;color:var(--ink);margin-bottom:6px;display:flex;gap:10px;align-items:center}
+.note h4 i{font-style:normal;width:26px;height:26px;border-radius:50%;background:var(--ink);color:#fff;display:grid;place-items:center;font-size:12px}
+.note p{font-size:15px;color:var(--muted);line-height:1.55}
+.note+.note{margin-top:10px}
+
+/* your ads */
+.lib{background:var(--cream);border-radius:20px;padding:32px;margin-top:44px;display:grid;grid-template-columns:.9fr 1.1fr;gap:32px;align-items:start}
+@media(max-width:900px){.lib{grid-template-columns:1fr;padding:16px}}
+.adpics{display:grid;grid-template-columns:1.5fr 1fr;gap:8px}
+.adpics .main{position:relative;border-radius:14px;overflow:hidden;background:#fff}
+.adpics .main img{width:100%}
+.adpics .tag{position:absolute;top:10px;left:10px;background:rgba(22,24,27,.86);color:#fff;font-size:11px;font-weight:600;letter-spacing:.06em;padding:5px 10px;border-radius:999px;display:flex;gap:6px;align-items:center}
+.adpics .tag::before{content:"";width:8px;height:8px;border-radius:50%;background:#1877F2}
+.adpics .side{display:flex;flex-direction:column;gap:8px}
+.adpics .side img{width:100%;aspect-ratio:9/8;object-fit:cover;object-position:top;border-radius:10px}
+.adb .hook{font-size:24px;font-weight:600;letter-spacing:-.01em;line-height:1.3;color:var(--ink);font-family:var(--fs)}
+.adb .hook small{display:block;font-family:var(--f);font-size:15px;font-weight:400;color:var(--muted);margin-top:4px}
+.adb .meta{font-size:13.5px;color:var(--muted);margin-top:10px}
+.adb dl{margin-top:8px;font-size:15px;line-height:1.5}
+.adb dt{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);margin-top:14px;font-weight:600}
+.adb dd{color:var(--ink-soft)}
+.adb .go{margin-top:20px}
+.adb .go button{height:48px;padding:0 24px;border-radius:999px;background:var(--ink);color:#fff;font-size:15px;font-weight:500}
+.groups{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:12px}
+@media(max-width:800px){.groups{grid-template-columns:1fr}}
+.grp{background:var(--cream);border-radius:16px;padding:18px 20px}
+.grp .k{font-size:11px;letter-spacing:.1em;text-transform:uppercase;color:var(--muted);font-weight:600}
+.grp h4{font:600 17px/1.35 var(--fs);color:var(--ink);margin-top:6px}
+.grp p{font-size:14px;color:var(--muted);margin-top:6px;line-height:1.5}
+.lib-foot{margin-top:16px;font-size:14px;color:var(--muted);line-height:1.55;max-width:880px}
+
+/* the five ideas */
+.list{margin-top:40px;display:flex;flex-direction:column;max-width:980px;border-top:1px solid var(--line)}
+.it{display:grid;grid-template-columns:64px 1fr;gap:18px;padding:26px 6px;cursor:pointer;border-bottom:1px solid var(--line);transition:background .2s}
+.it:hover{background:var(--soft)}
+@media(max-width:600px){.it{grid-template-columns:40px 1fr;gap:10px}}
+.it .em{font-size:22px;font-weight:600;color:var(--muted);letter-spacing:-.02em;padding-top:2px}
+.it h3{font-size:22px;font-weight:600;letter-spacing:-.02em;line-height:1.3;color:var(--ink)}
+.it p{font-size:15.5px;color:var(--muted);margin-top:6px;line-height:1.55;max-width:780px}
+.row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-top:12px;flex-wrap:wrap}
+.out{display:inline-flex;align-items:baseline;gap:8px;background:var(--gold-soft);color:#7A0014;padding:5px 12px;border-radius:999px;font-weight:600;font-size:14.5px}
+.out small{font-weight:400;font-size:12.5px}
+.see{font-size:14.5px;color:var(--ink);font-weight:500;text-decoration:underline;text-underline-offset:3px;text-decoration-color:var(--faint)}
+
+/* the outcome */
+.outc{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:40px}
+@media(max-width:860px){.outc{grid-template-columns:1fr}}
+.osh{position:relative;overflow:hidden;color:#fff;border-radius:20px;padding:36px 32px;display:flex;flex-direction:column;justify-content:flex-end;min-height:440px}
+.osh>img{position:absolute;left:50%;top:34px;width:58%;max-width:300px;transform:translateX(-50%) rotate(-3deg);border-radius:6px;opacity:.92;box-shadow:0 20px 50px rgba(0,0,0,.5)}
+.osh::after{content:"";position:absolute;inset:0;background:linear-gradient(0deg,rgba(19,12,47,.97) 40%,rgba(19,12,47,.1) 82%)}
+.osh>*:not(img){position:relative;z-index:2}
+.osh .k{font-size:12px;font-weight:500;letter-spacing:.12em;text-transform:uppercase;color:rgba(255,255,255,.7)}
+.osh h3{font-size:30px;font-weight:600;letter-spacing:-.03em;margin-top:8px;line-height:1.15;max-width:460px}
+.osh .nums{display:flex;gap:10px;margin-top:22px;flex-wrap:wrap}
+.osh .nums div{background:rgba(255,255,255,.1);border-radius:16px;padding:14px 20px;min-width:130px}
+.osh .nums b{display:block;font-size:40px;font-weight:600;letter-spacing:-.03em;line-height:1;color:#FF8A9A}
+.osh .nums span{font-size:13.5px;color:rgba(255,255,255,.8)}
+.osh .cap{font-size:14.5px;color:rgba(255,255,255,.78);margin-top:18px;line-height:1.5;max-width:470px}
+.dos{display:flex;flex-direction:column;gap:12px}
+.do{background:var(--cream);border-radius:20px;padding:24px 26px;flex:1}
+.do .k{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:500;margin-bottom:6px}
+.do h4{font-size:20px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
+.do p{font-size:15px;color:var(--muted);margin-top:6px;line-height:1.55}
+.endcta{display:flex;gap:12px;align-items:center;flex-wrap:wrap;margin-top:40px}
+.btn-k{height:52px;padding:0 26px;border-radius:999px;background:var(--ink);color:#fff;font-size:17px;font-weight:500;display:inline-flex;align-items:center}
+.btn-k:hover{background:#000}
+.btn-l{height:52px;padding:0 24px;border-radius:999px;background:var(--cream);color:var(--ink);font-size:17px;font-weight:500;display:inline-flex;align-items:center;text-decoration:none}
+.foot{font-size:13px;color:var(--muted);line-height:1.6;padding:30px 0 60px;border-top:1px solid var(--line);margin-top:36px}
+
+/* ======================= PROTOTYPE VIEW ======================= */
+.pwv{padding-top:48px;padding-bottom:70px}
+.pwv h1{font-size:clamp(34px,4.6vw,56px);font-weight:600;line-height:1.04;letter-spacing:-.03em;color:var(--ink)}
+.pwv h1 b{font-weight:600;color:var(--muted)}
+.pwv .sub{font-size:18px;color:var(--muted);margin-top:14px;max-width:820px}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:24px;align-items:center}
+.seg{display:inline-flex;background:var(--cream);border-radius:999px;padding:3px}
+.seg button{height:36px;padding:0 14px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted)}
+.seg button.on{background:var(--white);color:var(--ink);box-shadow:0 1px 3px rgba(22,24,27,.12)}
+.wt{height:42px;padding:0 18px;border-radius:999px;background:var(--ink);color:#fff;font-size:14.5px;font-weight:500;display:inline-flex;align-items:center;gap:8px}
+.wt.on{background:var(--gold);color:#fff}
+.steps{display:flex;gap:8px;flex-wrap:wrap;margin-top:14px}
+.steps button{height:44px;padding:0 18px;border-radius:999px;background:var(--cream);font-size:15px;font-weight:500;color:var(--ink-soft);transition:all .15s}
+.steps button:hover{background:var(--cream2)}
+.steps button.on{background:var(--ink);color:#fff}
+.steps button.td{background:#fff;box-shadow:inset 0 0 0 1.5px var(--faint);color:var(--muted)}
+.steps button.td.on{background:var(--muted);color:#fff;box-shadow:none}
+.stcap{margin-top:14px;font-size:15.5px;color:var(--muted);min-height:24px;max-width:900px}
+.stcap b{font-weight:600;color:var(--ink)}
+.dcap{margin-top:14px;height:0;overflow:hidden;transition:height .25s}
+.dcap.on{height:58px}
+.dcap-in{display:flex;align-items:center;gap:14px;background:var(--ink);color:#fff;border-radius:16px;padding:0 18px;height:58px;font-size:15px}
+.dcap-in .pr{flex:none;width:120px;height:4px;background:rgba(255,255,255,.2);border-radius:2px;overflow:hidden}
+.dcap-in .pr i{display:block;height:100%;width:0;background:#FF5A72}
+.dcap-in span{flex:1}
+@media(max-width:600px){.dcap.on{position:fixed;left:8px;right:8px;bottom:8px;z-index:60;margin:0}}
+.trio{display:flex;gap:28px;justify-content:center;margin-top:26px;--sc:.8}
+@media(max-width:899px){.trio{justify-content:flex-start;overflow-x:auto;scroll-snap-type:x mandatory;padding:0 16px 14px;margin-left:-16px;margin-right:-16px;gap:16px}}
+.tcol{flex:none;display:flex;flex-direction:column;align-items:center;scroll-snap-align:center}
+.apill{display:flex;align-items:center;gap:8px;height:34px;padding:0 14px 0 6px;border-radius:999px;background:var(--cream);font-size:13.5px;font-weight:500;color:var(--ink-soft);margin-bottom:14px;max-width:calc(390px * var(--sc) + 20px);white-space:nowrap;overflow:hidden}
+.apill .mt{height:24px;padding:0 9px;border-radius:99px;background:var(--ink);color:#fff;font-size:11.5px;display:inline-flex;align-items:center;flex:none}
+.apill .tx{overflow:hidden;text-overflow:ellipsis}
+.pbox{width:calc(390px * var(--sc));height:calc(844px * var(--sc));position:relative}
+.phone{position:absolute;left:0;top:0;width:390px;height:844px;transform:scale(var(--sc));transform-origin:0 0;border-radius:58px;background:#0c0c0c;padding:12px;box-shadow:0 30px 60px rgba(22,24,27,.22),0 0 0 2px #2c2c2c inset}
+.tcol.ring .phone{box-shadow:0 30px 60px rgba(22,24,27,.22),0 0 0 6px var(--ring)}
+.tlab{margin-top:16px;text-align:center;max-width:calc(390px * var(--sc) + 10px)}
+.tlab b{display:block;font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--ink);font-weight:600}
+.tlab span{display:block;font-size:14px;color:var(--muted);margin-top:4px;line-height:1.45}
+.finger{position:absolute;z-index:30;width:34px;height:34px;margin:-17px 0 0 -17px;border-radius:50%;background:rgba(255,255,255,.55);box-shadow:0 0 0 2px rgba(22,24,27,.35),0 6px 18px rgba(0,0,0,.35);pointer-events:none;opacity:0;transition:left .38s var(--ease),top .38s var(--ease),transform .12s,opacity .2s}
+.finger.on{opacity:1}.finger.press{transform:scale(.72)}
+
+/* ---- inside the phone: F.A.Z. Kiosk, as the app ships ---- */
+.scr{position:absolute;inset:12px;border-radius:46px;overflow:hidden;color-scheme:only light;
+  --k-bg:#1E2224; --k-pw:#2C353D; --k-card:#1E2224; --k-pick:#323232; --k-row:#26292C; --k-ink:#FFFFFF; --k-ink2:rgba(255,255,255,.8); --k-mute:rgba(255,255,255,.5); --k-line:rgba(255,255,255,.12);
+  --k-bar:#E6EAEB; --k-bar-ink:#000000; --k-dis:#838A90; --k-red:#E0334F; --k-navy:#130C2F; --k-sel:#FFFFFF; --k-pill:rgba(255,255,255,.1);
+  background:var(--k-bg);color:var(--k-ink);font-family:var(--fp);display:flex;flex-direction:column}
+.phone.lt .scr{--k-bg:#FFFFFF; --k-pw:#F1F3F4; --k-card:#FFFFFF; --k-pick:#ECEDEE; --k-row:#F4F5F6; --k-ink:#16181B; --k-ink2:rgba(22,24,27,.8); --k-mute:rgba(22,24,27,.5); --k-line:rgba(22,24,27,.12);
+  --k-bar:#1E2224; --k-bar-ink:#FFFFFF; --k-dis:#B9BEC2; --k-red:#B9001E; --k-sel:#16181B; --k-pill:rgba(22,24,27,.07)}
+.sb{height:50px;flex:none;display:flex;align-items:center;justify-content:space-between;padding:0 30px 0 36px;font-size:15px;font-weight:600;font-family:-apple-system,sans-serif;position:relative;z-index:6;color:var(--k-ink)}
+.sb.w{color:#fff}
+.sb .isl{position:absolute;left:50%;top:11px;width:120px;height:34px;margin-left:-60px;background:#000;border-radius:20px}
+.sb .ic{display:flex;gap:5px;align-items:center}
+.scr-top{flex:none;height:50px;display:flex;align-items:center;padding:0 14px;gap:12px;position:relative;z-index:5}
+.scr-top .ttl{position:absolute;left:0;right:0;text-align:center;font-size:16px;font-weight:700;pointer-events:none}
+.k-back{display:flex;align-items:center;gap:4px;font-size:16px;color:var(--k-ink);position:relative;z-index:2}
+.k-back svg{width:20px;height:20px}
+.k-x{margin-left:auto;width:36px;height:36px;border-radius:50%;background:var(--k-pill);display:grid;place-items:center;color:var(--k-ink);position:relative;z-index:2}
+.k-x svg{width:16px;height:16px}
+.k-prog{position:absolute;left:70px;right:70px;top:24px;height:3px;border-radius:2px;background:var(--k-line);pointer-events:none}
+.k-prog i{display:block;height:100%;border-radius:2px;background:var(--k-ink)}
+.scr-body{flex:1;min-height:0;overflow-y:auto;overflow-x:hidden;scrollbar-width:none;position:relative;padding:0 18px 18px}
+.scr-body::-webkit-scrollbar{display:none}
+.scr-body.col{display:flex;flex-direction:column}
+.scr-foot{flex:none;padding:12px 18px 30px;position:relative;z-index:4;background:var(--k-bg)}
+.scr-foot.sep{box-shadow:0 -1px 0 var(--k-line)}
+.k-wm{background:var(--k-ink);-webkit-mask:url(img/wordmark.png) center/contain no-repeat;mask:url(img/wordmark.png) center/contain no-repeat}
+.k-f{background:currentColor;-webkit-mask:url(img/fmark.png) center/contain no-repeat;mask:url(img/fmark.png) center/contain no-repeat}
+.k-btn{display:flex;align-items:center;justify-content:center;width:100%;height:52px;border-radius:3px;background:var(--k-bar);color:var(--k-bar-ink);font:700 16.5px/1 var(--fp)}
+.k-btn[disabled]{background:var(--k-dis);color:#1E2224;cursor:default}
+.k-ghost{display:flex;align-items:center;justify-content:center;width:100%;height:46px;border-radius:3px;border:1.5px solid var(--k-ink2);color:var(--k-ink);font:600 15px/1 var(--fp);margin-top:10px}
+.k-link{display:block;text-align:center;font-size:15px;color:var(--k-ink);text-decoration:underline;text-underline-offset:4px;margin-top:14px;width:100%}
+.k-h{font:400 27px/1.25 var(--fs);text-align:center;margin-top:18px}
+.k-h em{font-style:normal;color:var(--k-red)}
+.k-s{font-size:14px;line-height:1.5;color:var(--k-ink2);text-align:center;margin-top:10px}
+.k-lbl{font-size:13px;letter-spacing:.08em;text-transform:uppercase;color:var(--k-mute);margin:22px 0 8px}
+.toast{position:absolute;left:50%;bottom:120px;transform:translateX(-50%) translateY(10px);background:rgba(255,255,255,.96);color:#16181B;font:600 13px/1.3 var(--f);padding:10px 15px;border-radius:999px;opacity:0;transition:all .25s;pointer-events:none;z-index:40;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.3)}
+.toast.show{opacity:1;transform:translateX(-50%)}
+.pulse{animation:pulse 1.6s ease-out 2}
+@keyframes pulse{0%{box-shadow:0 0 0 0 rgba(255,74,100,.95)}100%{box-shadow:0 0 0 16px rgba(255,74,100,0)}}
+
+/* arrive: the splash, then a sentence about 18:00 */
+.spl{position:absolute;inset:0;background:var(--k-navy);display:flex;flex-direction:column;color:#fff}
+.spl-in{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:0 34px}
+.spl .k-f{width:76px;height:108px;color:#fff}
+.spl h2{font:700 17px/1.3 var(--fp);margin-top:34px}
+.spl p{font:400 16px/1.5 var(--fs);color:rgba(255,255,255,.88);margin-top:14px}
+.spl .new{font:400 21px/1.4 var(--fs);color:#fff;margin-top:34px;padding-top:26px;border-top:1px solid rgba(255,255,255,.2)}
+.spl .scr-foot{background:transparent}
+.spl .k-btn{background:#E6EAEB;color:#000}
+.spl .k-link{color:#fff}
+
+/* format picker: their LESEPRÄFERENZ cards */
+.fmt{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-top:24px}
+.fmc{border-radius:10px;padding:16px 10px 14px;display:flex;flex-direction:column;align-items:center;text-align:center;color:var(--k-ink);transition:background .15s}
+.fmc.on{background:var(--k-pick)}
+.fmc img{width:78px;border-radius:8px}
+.fmc b{font-size:16px;font-weight:400;line-height:1.35;margin-top:14px;min-height:66px}
+.fmc .rd{width:22px;height:22px;border-radius:50%;border:1.5px solid var(--k-ink2);margin-top:8px;display:grid;place-items:center}
+.fmc.on .rd{background:var(--k-ink);border-color:var(--k-ink)}
+.fmc .rd svg{width:13px;height:13px;stroke:var(--k-bg);stroke-width:3.4;fill:none;opacity:0}
+.fmc.on .rd svg{opacity:1}
+.fmc small{font-size:12.5px;color:var(--k-mute);margin-top:10px;line-height:1.4}
+
+/* sections: their Profil list rows, with the Erscheinungsbild check */
+.rl{margin-top:10px;border-top:1px solid var(--k-line)}
+.rr{display:flex;align-items:center;justify-content:space-between;width:100%;height:52px;border-bottom:1px solid var(--k-line);font-size:17px;color:var(--k-ink);text-align:left}
+.rr .ck{width:22px;height:22px;opacity:0;color:var(--k-ink)}
+.rr.on .ck{opacity:1}
+.rr .nb{font-size:12px;color:var(--k-mute);margin-left:8px}
+
+/* tracking: one quiet line, then Apple's dialog */
+.att{flex:1;display:flex;flex-direction:column;justify-content:center;padding:0 10px 30px;text-align:center}
+.att .k-f{width:44px;height:62px;margin:0 auto;color:var(--k-ink)}
+.att h3{font:400 25px/1.3 var(--fs);margin-top:24px}
+.att p{font-size:15px;line-height:1.55;color:var(--k-ink2);margin-top:14px}
+.sys{position:absolute;inset:0;z-index:20;background:rgba(0,0,0,.45);display:flex;align-items:center;justify-content:center;font-family:-apple-system,sans-serif}
+.sys-in{width:290px;border-radius:26px;background:rgba(40,40,42,.97);color:#fff;padding:20px 18px 14px;text-align:left}
+.phone.lt .sys-in{background:rgba(246,246,248,.98);color:#000}
+.sys-in .ai{width:46px;height:46px;border-radius:12px;overflow:hidden}
+.sys-in .ai img{width:100%}
+.sys-in h5{font-size:17px;font-weight:600;line-height:1.3;margin-top:14px}
+.sys-in p{font-size:13px;line-height:1.45;opacity:.7;margin-top:8px}
+.sys-in button{display:block;width:100%;height:44px;border-radius:999px;background:rgba(120,120,128,.24);font-size:16px;font-weight:500;margin-top:10px}
+
+/* loader */
+.ld{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 22px 40px}
+.ld .k-f{width:70px;height:100px;color:var(--k-ink);animation:bob 1.1s ease-in-out infinite}
+@keyframes bob{50%{transform:translateY(-8px) rotate(-4deg)}}
+.ld h3{font:400 24px/1.3 var(--fs);text-align:center;margin-top:26px}
+.ld-bar{width:100%;height:4px;border-radius:2px;background:var(--k-line);margin-top:20px;overflow:hidden}
+.ld-bar i{display:block;height:100%;width:0;background:var(--k-ink);transition:width .25s linear}
+.ld-list{width:100%;margin-top:20px;display:flex;flex-direction:column;gap:12px}
+.ld-list div{display:flex;gap:10px;align-items:center;font-size:15px;line-height:1.35;color:var(--k-mute);transition:color .3s}
+.ld-list div.ok{color:var(--k-ink)}
+.ld-list .ck{flex:none;width:22px;height:22px;border-radius:50%;border:1.5px solid var(--k-mute);display:grid;place-items:center}
+.ld-list div.ok .ck{background:var(--k-ink);border-color:var(--k-ink)}
+.ld-list .ck svg{width:12px;height:12px;stroke:var(--k-bg);stroke-width:3.4;fill:none;opacity:0}
+.ld-list div.ok .ck svg{opacity:1}
+.ld-list b{font-weight:700}
+
+/* payoff: your issue */
+.iss{margin-top:16px;display:flex;flex-direction:column;align-items:center}
+.iss .cv{width:220px;border-radius:2px;box-shadow:0 14px 40px rgba(0,0,0,.45);position:relative;overflow:hidden}
+.iss .cv img{width:100%}
+.iss .dt{width:220px;background:#2E3236;color:#fff;font-size:13px;font-weight:700;padding:9px 10px;display:flex;justify-content:space-between}
+.phone.lt .iss .dt{background:#F1F2F3;color:#16181B}
+.nx{margin-top:16px;border:1px solid var(--k-line);border-radius:6px;padding:12px 14px;display:flex;gap:12px;align-items:center}
+.nx .clk{flex:none;font:600 22px/1 var(--fs);color:var(--k-red)}
+.nx p{font-size:13.5px;line-height:1.45;color:var(--k-ink2)}
+.mine{margin-top:12px;border-top:1px solid var(--k-line)}
+.mine div{display:flex;justify-content:space-between;align-items:center;padding:11px 0;border-bottom:1px solid var(--k-line);font-size:15px}
+.mine small{font-size:12.5px;color:var(--k-mute)}
+
+/* proposed offer */
+.pw{background:var(--k-pw)}
+.pw .scr-foot{background:var(--k-pw)}
+.pw-hero{width:50%;margin:-6px auto 0}
+.pw-eb{text-align:center;font-size:12.5px;letter-spacing:.14em;text-transform:uppercase;color:var(--k-red);font-weight:700;margin-top:12px}
+.pw-h{font:400 26px/1.25 var(--fs);text-align:center;margin-top:8px;position:relative}
+.pw-chip{display:flex;justify-content:center;margin-top:12px}
+.pw-chip span{display:inline-flex;align-items:center;gap:6px;height:28px;padding:0 12px;border-radius:999px;background:var(--k-pill);font-size:13px;font-weight:600;color:var(--k-ink2)}
+.stars{display:flex;align-items:center;justify-content:center;gap:7px;font-size:13px;font-weight:600;margin-top:12px;color:var(--k-ink2)}
+.stars i{font-style:normal;color:#F5B300;letter-spacing:1px;font-size:14px}
+.cmp{display:grid;grid-template-columns:1fr 78px 78px;margin-top:8px;margin-bottom:16px;font-size:13px;border-top:1px solid var(--k-line)}
+.cmp>div{padding:9px 6px;border-bottom:1px solid var(--k-line);display:flex;align-items:center;line-height:1.3}
+.cmp .hd{color:var(--k-mute);font-size:11.5px;letter-spacing:.06em;text-transform:uppercase}
+.cmp .c{justify-content:center;text-align:center}
+.cmp .p{justify-content:center;font-weight:700;background:var(--k-pill)}
+.cmp .x{color:var(--k-mute)}
+.plans{margin-top:16px}
+.plan{position:relative;display:block;width:100%;text-align:left;background:var(--k-card);color:var(--k-ink);border-radius:2px;padding:14px 14px 13px;margin-bottom:10px;border:2px solid transparent;font-family:var(--fp)}
+.plan.on{border-color:var(--k-sel)}
+.plan .tg{position:absolute;top:12px;right:12px;background:#E6EAEB;color:#000;font:400 14px/1 var(--fp);padding:6px 9px;border-radius:2px}
+.plan b{display:block;font-size:17px;font-weight:700}
+.plan .pp{font-size:19px;font-weight:700;margin-top:8px;display:block}
+.plan .pp small{font-size:15px;font-weight:400}
+.plan .then{display:block;font-size:14px;color:var(--k-ink);margin-top:3px}
+.plan .ds{display:block;font-size:12.5px;color:var(--k-mute);margin-top:6px}
+.rev{margin-top:6px;border-left:3px solid var(--k-red);padding:4px 0 4px 14px}
+.rev p{font:400 15px/1.5 var(--fs);color:var(--k-ink)}
+.rev .tr{font-family:var(--f);font-size:12.5px;color:var(--k-mute);margin-top:6px;line-height:1.45}
+.rev small{display:block;font-size:12px;color:var(--k-mute);margin-top:6px}
+.legal{font-size:11px;line-height:1.55;color:var(--k-mute);margin-top:18px}
+.legal h6{font-size:13px;color:var(--k-ink);text-align:center;margin-bottom:8px}
+.fcap{font-size:12px;color:var(--k-ink2);text-align:center;margin-top:9px;line-height:1.4}
+.flk{display:flex;justify-content:center;gap:22px;margin-top:10px;font-size:14px}
+.flk span{text-decoration:underline;text-underline-offset:3px}
+
+/* today's offer, as it ships */
+.t-h{font:400 26px/1.3 var(--fs);text-align:center;margin-top:18px}
+.t-plan{display:block;width:100%;text-align:left;background:var(--k-card);padding:14px 14px 14px;margin-top:12px;border:2px solid transparent;border-radius:2px;position:relative;color:var(--k-ink);font-family:var(--fp)}
+.t-plan.on{border-color:var(--k-sel)}
+.t-plan b{font-size:16px}
+.t-plan .tg{position:absolute;top:12px;right:12px;background:#E6EAEB;color:#000;font-size:14px;padding:5px 8px;border-radius:2px}
+.t-plan .pr{display:flex;align-items:baseline;gap:8px;margin-top:12px;font-size:14px}
+.t-plan .pr strong{font-size:19px}
+.t-plan .pr small{font-size:10.5px;margin-left:auto}
+.t-plan .ds{display:block;font-size:12px;margin-top:10px}
+.t-info{font-size:12px;line-height:1.55;color:var(--k-ink2);margin-top:22px}
+.t-info h6{font-size:13px;color:var(--k-ink);text-align:center;margin-bottom:12px}
+.cap-today{margin:18px 0 6px;border:1.5px dashed var(--k-mute);border-radius:10px;padding:12px;text-align:center;font-size:12.5px;color:var(--k-ink2);line-height:1.5;font-family:var(--f)}
+
+/* the shelf, where the X lands */
+.hm-top{flex:none;height:50px;display:flex;align-items:center;justify-content:space-between;padding:0 16px;color:var(--k-ink)}
+.hm-top .k-wm{width:150px;height:22px}
+.hm-top svg{width:22px;height:22px}
+.hm-sw{text-align:center;font-size:12.5px;color:var(--k-ink2)}
+.hm-sw b{font-weight:700;color:var(--k-ink)} .hm-sw u{text-underline-offset:3px}
+.shl{font-size:15px;letter-spacing:.06em;text-transform:uppercase;margin:18px 0 10px;color:var(--k-ink)}
+.shl.red{color:var(--k-red)}
+.shelf{display:flex;gap:10px;overflow:hidden;margin-right:-18px}
+.shelf div{flex:none;width:200px;background:#2E3236;color:#fff}
+.phone.lt .shelf div{background:#F1F2F3;color:#16181B}
+.shelf img{width:100%;height:220px;object-fit:cover;object-position:top}
+.shelf span{display:block;font-size:12px;font-weight:700;padding:8px}
+.pushc{margin-top:12px;background:var(--k-row);border-radius:8px;padding:14px;display:flex;gap:12px;align-items:flex-start}
+.pushc .clk{flex:none;font:600 20px/1 var(--fs);color:var(--k-red);padding-top:2px}
+.pushc p{font-size:14px;line-height:1.45}
+.pushc .bt{display:flex;gap:8px;margin-top:10px}
+.pushc .bt button{height:34px;padding:0 12px;border-radius:3px;font-size:14px;font-weight:600}
+.pushc .bt .y{background:var(--k-bar);color:var(--k-bar-ink)}
+.pushc .bt .n{border:1px solid var(--k-line)}
+.tabbar{flex:none;height:78px;padding-bottom:22px;border-top:1px solid var(--k-line);display:flex;align-items:center;justify-content:space-around;font-size:11px;color:var(--k-mute);background:var(--k-bg)}
+.tabbar div{display:flex;flex-direction:column;align-items:center;gap:3px}
+.tabbar div.on{color:var(--k-ink)}
+.tabbar svg{width:22px;height:22px}
+.tabbar .k-f{width:14px;height:20px}
+
+.ideas{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:56px}
+@media(max-width:800px){.ideas{grid-template-columns:1fr}}
+.idea{background:var(--cream);border-radius:16px;padding:22px 24px;cursor:pointer;transition:background .15s}
+.idea:hover{background:var(--cream2)}
+.idea:last-child{grid-column:1/-1}
+.idea .n{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--gold-lift);font-weight:600}
+.idea h3{font-size:19px;font-weight:600;letter-spacing:-.02em;margin-top:4px;line-height:1.3;color:var(--ink)}
+.idea p{font-size:14.5px;color:var(--muted);margin-top:6px;line-height:1.55}
+.idea .kept{font-size:13px;color:var(--muted);margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.qr{position:relative;overflow:hidden;display:flex;gap:26px;align-items:center;color:#fff;border-radius:20px;padding:30px 32px;margin-top:40px;flex-wrap:wrap}
+.qr>*{position:relative;z-index:2}
+.qr img.code{width:123px;height:123px;background:#fff;border-radius:12px;image-rendering:pixelated}
+.qr .fm{width:46px;height:66px;color:rgba(255,255,255,.9)}
+.qr h3{font-size:24px;font-weight:600;letter-spacing:-.02em}
+.qr p{font-size:15px;color:rgba(255,255,255,.82);margin-top:4px;max-width:520px}
+.qr .demo{margin-left:auto;background:#fff;color:var(--ink);height:48px;padding:0 24px;font-size:16px}
+@media(max-width:1080px){.qr img.code{display:none}}
+@media(max-width:700px){.qr .demo{margin-left:0}}
+</style>
+</head>
+<body>
+
+<nav class="nav"><div class="nav-in">
+  <span class="logo" role="img" aria-label="Frankfurter Allgemeine"></span>
+  <span class="sep"></span><span class="lbl">Growth audit · by Adapty</span>
+  <div class="tabs"><button data-v="over" class="on">Overview</button><button data-v="pw">Prototype</button></div>
+  <a class="demo" href="https://calendly.com/d/cty4-37z-zqj" target="_blank" rel="noopener">Book a demo</a>
+</div></nav>
+
+<!-- ======================= OVERVIEW ======================= -->
+<div class="view on" id="view-over">
+  <header class="hero hero-frame navy-bg">
+    <div class="press" id="press" aria-hidden="true"></div>
+    <div class="wrap hero-in">
+      <div>
+        <div class="eyebrow">Growth audit · November 2026 · Prepared by Adapty</div>
+        <h1>Your readers get tomorrow’s paper at 18:00. <em class="g">A new install never hears it.</em></h1>
+        <p class="lead">A new F.A.Z. Kiosk install accepts your consent screen, lands on the shelf under two iOS prompts at once, and meets „Wählen Sie Ihr Angebot für die digitale Ausgabe“ only after tapping a locked issue. Nothing is selected, and nothing mentions E-Paper, Edition or 18 Uhr. Here is a first launch that asks how they read, in your design, at your prices.</p>
+        <div class="cta-row">
+          <button class="btn-w" data-open="pw">Open the three flows</button>
+          <button class="btn-o" data-walk>▶ Watch the 30-second walkthrough</button>
+        </div>
+        <p class="byline">Built from your live iOS app, your App Store listing, your Aboshop and the Meta ads you run today.</p>
+      </div>
+      <div class="fan" aria-hidden="true">
+        <img src="img/shot-home.jpg" style="left:0;top:70px;transform:rotate(-8deg)" alt="">
+        <img src="img/shot-edition.jpg" style="left:29%;top:16px;transform:rotate(-1deg);z-index:2" alt="">
+        <img src="img/shot-paywall.jpg" style="left:58%;top:80px;transform:rotate(7deg)" alt="">
+        <img class="j" src="img/icon.png" alt="">
+      </div>
+    </div>
+  </header>
+
+  <div class="stats"><div class="wrap">
+    <div class="stat"><b><i>★</i> 4.5</b><span>from 13,076 ratings on the German App Store</span></div>
+    <div class="stat"><b>1,100+</b><span>prizes and awards for F.A.Z. and F.A.S., as your listing says</span></div>
+    <div class="stat"><b>18:00</b><span>the evening before: when the next issue is ready to read</span></div>
+    <div class="stat"><b>0</b><span>questions a new install is asked, so every reader meets the same offer</span></div>
+  </div></div>
+
+  <section class="sec"><div class="wrap about">
+    <div>
+      <div class="kick">What this is</div>
+      <h2 class="sec-h">We installed F.A.Z. Kiosk, walked the first launch, then rebuilt <b>the screens between the splash and the offer</b>.</h2>
+      <p class="sec-p">Adapty powers subscriptions for 30,000+ apps, so we see what moves purchases across the market. Nearly 500 apps build their paywalls and onboarding in Adapty Flow Builder, and millions of dollars in subscription revenue pass through it every month. For the Kiosk we looked for the gap between what the app does best and what a new install is told about it.</p>
+      <div class="flowp">
+        <div class="k2">Your first launch today</div>
+        <div><i>1</i><span>The navy splash, then your consent screen: Zustimmen, Einstellungen, Alles ablehnen. <b>Kept, untouched.</b></span></div>
+        <div><i>2</i><span>The shelf, with the notification prompt and the tracking prompt on top of each other. <b>Split: tracking stays early, notifications move after the offer.</b></span></div>
+        <div><i>3</i><span>E-Paper or Edition, chosen only in Profil → Ansicht. <b>Now asked up front, and used.</b></span></div>
+        <div><i>4</i><span>The offer, reached only by tapping a locked issue. <b>Kept, and shown once at the end of first launch.</b></span></div>
+      </div>
+    </div>
+    <div>
+      <div class="note"><h4><i>1</i>Your design, not ours</h4><p>The #130C2F navy and the F of your splash, the Frankfurter Allgemeine wordmark, your #1E2224 shelf and #2C353D offer screen, the red of the Sonntagszeitung label, the serif offer headline, your E-Paper and Edition cards with their phone pictures, the light „Wählen und bezahlen“ bar. Only the order changes.</p></div>
+      <div class="note"><h4><i>2</i>Your prices, as published</h4><p>Monatsabo: 25,99 € a month for 3 months, then 54,90 € a month, for F.A.Z., F.A.S. and F.A.Q. F.A.Z. Einzelausgabe: 3,99 € once. Both exactly as your in-app offer shows them. There is no trial in the app, so none is shown: no invented discount, no timer. The 0,99 € FAZ+ offer from your ads is a web product, so it stays off this screen.</p></div>
+      <div class="note"><h4><i>3</i>You may have tested some of this</h4><p>We cannot see your experiment history. Tell us what you already ran and we will go deeper on the rest.</p></div>
+    </div>
+  </div></section>
+
+  <section class="sec" id="ads" style="padding-top:0"><div class="wrap">
+    <div class="kick">Your ads on Meta</div>
+    <h2 class="sec-h">Ten ads on Meta. <b>None of them sells the Kiosk.</b></h2>
+    <p class="sec-p">AppMagic sees ten creatives from the FAZ.NET page on Facebook and Instagram, 99% of the ad activity it tracks for you, five of them new since 22 October. Every one sends readers to an article on faz.net. A reader who wants the paper itself has to find the Kiosk alone, and then meets a first launch that knows nothing about them.</p>
+    <div class="lib">
+      <div class="adpics">
+        <div class="main"><img src="img/ad-etf.jpg" alt="Meta ad: Warum das neue ETF-Portfolio fast alle Fonds schlägt"><span class="tag">META · SINCE 26 OCT 2026</span></div>
+        <div class="side"><img src="img/ad-paar.jpg" alt=""><img src="img/ad-job.jpg" alt=""><img src="img/ad-wsj.jpg" alt=""></div>
+      </div>
+      <div class="adb">
+        <div class="hook">„Warum das neue ETF-Portfolio fast alle Fonds schlägt“<small>“Why the new ETF portfolio beats almost every fund.” Below it: „Zugang zu allen FAZ+ Beiträgen jetzt nur 0,99 €“.</small></div>
+        <div class="meta">Meta · three versions since 26 October 2026 · static image · FAZ.NET page · dates as seen by AppMagic</div>
+        <dl>
+          <dt>In the ad</dt><dd>A trading chart under an FAZ+ finance headline, and every FAZ+ article for 0,99 €.</dd>
+          <dt>The promise</dt><dd>Sharp money journalism for less than a euro: on your Aboshop, 0,99 € for 4 weeks, then 3,45 € a week.</dd>
+          <dt>Today it lands on</dt><dd>faz.net, not the app. A reader who later installs the Kiosk meets the same shelf and the same offer as everyone else.</dd>
+          <dt>In the rebuild</dt><dd>This is the reader on the middle phone: Finanzen picked first, Edition as the format, and the offer opens on the Finanzen pages of tomorrow’s paper.</dd>
+        </dl>
+        <div class="go"><button data-adgo="1">Open the finance reader’s flow</button></div>
+      </div>
+    </div>
+    <div class="groups">
+      <div class="grp"><div class="k">Relationships · 3 ads</div><h4>„Die Sexualität ist ein Spiegel der Beziehung“</h4><p>“Lesen Sie unsere beliebtesten Artikel”, since February 2025 and June 2026. Lands on faz.net.</p></div>
+      <div class="grp"><div class="k">Careers · 2 ads</div><h4>„Es ging einfach nicht mehr“</h4><p>Big Four and law-firm burnout, since April 2026. Lands on faz.net.</p></div>
+      <div class="grp"><div class="k">WSJ in English · 2 ads</div><h4>“AI Is Squeezing Out the Rest of the Stock Market”</h4><p>WSJ articles with FAZ+, “6 € / month for 6 months”, since 22 October 2026. Lands on faz.net/wsj.</p></div>
+    </div>
+    <p class="lib-foot">When you run an install campaign for the Kiosk, Adapty can pick the flow at first open from the campaign the install came from, through your attribution partner. A finance ad would open on Finanzen, a culture ad on Feuilleton, the same day, with no app release.</p>
+  </div></section>
+
+  <section class="sec" style="padding-top:0"><div class="wrap">
+    <div class="kick">The five ideas</div>
+    <h2 class="sec-h">Ranked by what we would <b>test first</b>.</h2>
+    <p class="sec-p">Tap any of them to open that screen on all three phones.</p>
+    <div class="list" id="list"></div>
+  </div></section>
+
+  <section class="sec" style="padding-top:0"><div class="wrap">
+    <div class="kick">Potential outcome</div>
+    <h2 class="sec-h">Five ideas, <b>one first launch per reader</b>.</h2>
+    <div class="outc">
+      <div class="osh navy-bg">
+        <img src="img/cover-faz.jpg" alt="">
+        <div class="k">Run together</div>
+        <h3>Every reader meets the paper they asked for, on the screen they pay on</h3>
+        <div class="nums"><div><b>+20%</b><span>purchases</span></div><div><b>+5%</b><span>ARPU</span></div></div>
+        <p class="cap">Each change is its own A/B test against today’s offer, judged on revenue per install for each section and format.</p>
+      </div>
+      <div class="dos">
+        <div class="do"><div class="k">Do this week</div><h4>Show the offer once, at the end of first launch</h4><p>Two questions, your tracking prompt, the issue, then the offer, closing straight onto the shelf. Built in Flow Builder, live without an app release.</p></div>
+        <div class="do"><div class="k">Then</div><h4>One template, section and format as the variables</h4><p>Six sections, two formats, one offer screen. The headline, the chip and the order of the Kombi rows change with the answers.</p></div>
+        <div class="do"><div class="k">And measure</div><h4>Judge each section on revenue, not installs</h4><p>Adapty reports purchases and revenue per install for each section, each format and each campaign, so spend follows the readers who subscribe.</p></div>
+      </div>
+    </div>
+    <div class="endcta"><button class="btn-k" data-open="pw">Open the prototype</button><a class="btn-l" href="https://calendly.com/d/cty4-37z-zqj" target="_blank" rel="noopener">Book a demo</a></div>
+    <p class="foot">Impact ranges are Adapty’s expected effect from teardowns and A/B tests across subscription apps, not measured lift for F.A.Z. Kiosk. Screens, copy, prices (Monatsabo 25,99 € a month for 3 months, then 54,90 € a month; Einzelausgabe 3,99 €) and the Kombi line come from the F.A.Z. Kiosk iOS app as recorded on 19 November 2026 on the German storefront. 4.5 from 13,076 ratings, “über 1.100 Preise und Auszeichnungen”, “bereits am Vortag ab 18 Uhr”, the section names and the reader quote (HmK55, 26 March 2022) come from the German App Store listing; the light-mode shelf and the Edition imagery from its screenshots. The ten Meta creatives and their dates are as seen by AppMagic; the 0,99 € for 4 weeks, then 3,45 € a week FAZ+ price is from abo.faz.net on 19 November 2026. The light-mode offer screen is approximated from your light shelf.</p>
+  </div></section>
+</div>
+
+<!-- ======================= PROTOTYPE ======================= -->
+<div class="view" id="view-pw">
+  <div class="wrap pwv">
+    <div class="kick">Prototype · one first launch per reader</div>
+    <h1>Three new readers. <b>Three front pages.</b></h1>
+    <p class="sub">A paper reader, the finance reader your ETF ad speaks to, and a culture reader. Same screens, same prices. Tap the steps, or tap inside any phone: pick a format, pick sections, choose a plan, close it.</p>
+    <div class="tools">
+      <div class="seg" id="theme"><button data-th="dark" class="on">Dark</button><button data-th="light">Light</button></div>
+      <button class="wt" id="wt" data-walk>▶ 30-second walkthrough</button>
+    </div>
+    <div class="steps" id="steps">
+      <button data-st="today" class="td">Today</button><button data-st="arrive">1 · Arrive</button><button data-st="fmt">2 · E-Paper or Edition</button><button data-st="res">3 · Sections</button><button data-st="att">4 · Tracking</button><button data-st="load">5 · Loader</button><button data-st="issue">6 · Your issue</button><button data-st="pw" class="on">7 · Offer</button><button data-st="home">8 · Shelf</button>
+    </div>
+    <p class="stcap" id="stcap"></p>
+    <div class="dcap" id="dcap"><div class="dcap-in"><span id="dtx"></span><div class="pr"><i id="dpr"></i></div></div></div>
+    <div class="trio" id="trio"></div>
+    <div class="ideas" id="ideas"></div>
+    <div class="qr navy-bg">
+      <img class="code" src="img/qr.svg" alt="QR code to this prototype">
+      <i class="k-f fm" aria-hidden="true"></i>
+      <div><h3>Try it on your phone</h3><p>Scan to open the three flows in your hand. Every screen is buildable in Adapty Flow Builder and testable against today’s offer.</p></div>
+      <a class="demo" href="https://calendly.com/d/cty4-37z-zqj" target="_blank" rel="noopener">Book a demo</a>
+    </div>
+  </div>
+</div>
+
+<script>
+var $=function(s,r){ return (r||document).querySelector(s); }, $$=function(s,r){ return [].slice.call((r||document).querySelectorAll(s)); };
+function SV(d,w){ return '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(w||2)+'" stroke-linecap="round" stroke-linejoin="round">'+d+'</svg>'; }
+var CHK='<svg viewBox="0 0 24 24"><path d="M20 6 9 17l-5-5" stroke-linecap="round" stroke-linejoin="round"/></svg>';
+var TICK=SV('<path d="M20 6 9 17l-5-5"/>',2.4);
+var BACK=SV('<path d="M15 5l-7 7 7 7"/>',2.2);
+var XI=SV('<path d="M6 6l12 12M18 6 6 18"/>',2.4);
+
+/* language: the phones carry English and German; English is on for review */
+var G={ lang:'en', theme:'dark', step:'pw' };
+function L(en,de){ return G.lang==='de'&&de?de:en; }
+
+/* the sections, as the App Store listing names them */
+var RES={
+ pol:{en:'Politics',de:'Politik'}, wir:{en:'Business',de:'Wirtschaft'}, fin:{en:'Finance',de:'Finanzen'},
+ spo:{en:'Sport',de:'Sport'}, lif:{en:'Lifestyle',de:'Lifestyle'}, feu:{en:'Arts & Culture',de:'Feuilleton'}
+};
+var RORD=['pol','wir','fin','spo','lif','feu'];
+function rn(k){ return L(RES[k].en,RES[k].de); }
+function rd(k){ return RES[k].de; }
+var FMT={ ep:{en:'E-Paper',de:'E-Paper'}, ed:{en:'Edition',de:'Edition'} };
+function fn(k){ return L(FMT[k].en,FMT[k].de); }
+
+/* the offer's headline, by the first section picked */
+var HEAD={
+ pol:['Tomorrow’s politics pages, tonight from 18:00.','Die Politik von morgen, heute ab 18 Uhr.'],
+ wir:['Tomorrow’s business section, tonight from 18:00.','Die Wirtschaft von morgen, heute ab 18 Uhr.'],
+ fin:['Tomorrow’s markets and money pages, tonight from 18:00.','Finanzen und Märkte von morgen, heute ab 18 Uhr.'],
+ spo:['Tomorrow’s sport section, tonight from 18:00.','Der Sport von morgen, heute ab 18 Uhr.'],
+ lif:['Tomorrow’s lifestyle pages, tonight from 18:00.','Der Lifestyle-Teil von morgen, heute ab 18 Uhr.'],
+ feu:['Tomorrow’s Feuilleton, tonight from 18:00.','Das Feuilleton von morgen, heute ab 18 Uhr.']
+};
+var FSUB={
+ ep:['In the classic newspaper layout, page by page, exactly as it prints.','Im klassischen Zeitungslayout, Seite für Seite, wie gedruckt.'],
+ ed:['As the Edition: reading times on every piece, the editors’ top stories first.','Als Edition: mit Lesedauer und den Top-Themen der Redaktion vorn.']
+};
+var PRICE={ en:{m:'€25.99',then:'€54.90',one:'€3.99'}, de:{m:'25,99 €',then:'54,90 €',one:'3,99 €'} };
+function P(){ return PRICE[G.lang]; }
+
+/* the three phones */
+var PH=[
+ { id:'paper', ring:'#130C2F', fmt:'ep', res:['pol','wir'], mt:'App Store', lab:['The paper reader','Picks E-Paper and Politik. The offer opens on tomorrow’s politics pages, in the classic layout.'] },
+ { id:'fin', ring:'#B9001E', fmt:'ed', res:['fin'], mt:'App Store', lab:['The finance reader','The reader your ETF ad talks to. Picks Edition and Finanzen; the offer opens on the markets pages.'] },
+ { id:'feu', ring:'#7C8A96', fmt:'ed', res:['feu','lif'], mt:'App Store', lab:['The culture reader','Picks Edition and Feuilleton. Reading times and the Feuilleton lead the offer.'] }
+];
+
+var IDEAS=[
+ { t:'Offer the subscription once, at the end of first launch', p:'Today a new install sees the splash, your consent screen, then the shelf, and meets a price only if it taps a locked issue. Here two short questions, your tracking prompt and a look at the issue come first, then the offer, and its ✕ closes straight onto the shelf.', o:'CR +10–20%', u:'to purchase', st:'pw', hl:'eb', kept:'Kept: your offer screen, your hero image, your two plans, Login and In-App Käufe wiederherstellen.' },
+ { t:'Name their section and format in the headline', p:'Today every reader reads „Wählen Sie Ihr Angebot für die digitale Ausgabe“. Here the paper reader reads „Die Politik von morgen, heute ab 18 Uhr.“ in the E-Paper layout, and the finance reader „Finanzen und Märkte von morgen, heute ab 18 Uhr.“ as the Edition.', o:'CR +15–20%', u:'to purchase', st:'pw', hl:'head', kept:'Kept: your serif headline type. One template, with the first section as the variable.' },
+ { t:'Select the Monatsabo for them and print what month four costs', p:'Today nothing is selected, „Wählen und bezahlen“ stays grey until a tap, and „Dann 54,90 €/Monat“ sits in small type beside the price. Here the Monatsabo arrives selected under your own Empfohlen tag, 54,90 € has its own line, and the bar names the price.', o:'CR +5–15%', u:'to purchase, ARPU +3–8%', st:'pw', hl:'plans', kept:'Kept: your two plans and your prices, nothing invented, no trial.' },
+ { t:'Put your 4.5 stars and a reader’s words next to the price', p:'Today the offer shows no rating and no reader. Here 4.5 from 13,076 ratings sits under the headline, and a reader of yours closes the case: „Bereits am Vorabend steht die Zeitung zur Verfügung, in gewohnter sehr hoher Qualität und vollem Umfang“.', o:'CR +10–15%', u:'to purchase', st:'pw', hl:'proof', kept:'Kept: the quote verbatim from your App Store page, with the reviewer’s name.' },
+ { t:'Ask for notifications after the offer, as an 18:00 alert', p:'Today the notification prompt and the tracking prompt appear on the shelf at the same moment, before the reader has read a line. Here tracking keeps its early place, alone, and notifications are asked on the shelf after the offer, for one reason: the new issue is ready at 18:00.', o:'CR +10–15%', u:'to purchase', st:'home', hl:'push', kept:'Kept: your Push-Mitteilungen settings for Tageszeitung, Sonntagszeitung, Quarterly, Magazin and Metropol.' }
+];
+
+var TCAP={
+ today:'<b>Today:</b> this is the offer for everyone, reached only by tapping a locked issue on the shelf. Nothing is selected until the reader taps a plan.',
+ arrive:'<b>Step 1.</b> Your splash, with one sentence about 18:00. Your consent screen stays in front of it, unchanged.',
+ fmt:'<b>Step 2. Proposed:</b> your E-Paper or Edition choice from Profil → Ansicht, asked on day one.',
+ res:'<b>Step 3. Proposed:</b> which section they read first, in your list style. Change the picks and watch the offer follow.',
+ att:'<b>Step 4.</b> Tracking stays early, on its own, so every install can be tied to the campaign that bought it.',
+ load:'<b>Step 5. Proposed:</b> the wait reads each answer back while it sets up the issue.',
+ issue:'<b>Step 6. Proposed:</b> today’s issue in the format they picked, and when tomorrow’s arrives.',
+ pw:'<b>Step 7. Proposed:</b> the offer names their section and format. Scroll a phone, pick a plan, tap ✕: it closes straight onto the shelf.',
+ home:'<b>Step 8. Proposed:</b> the shelf after ✕, and only now the notification ask, tied to 18:00.'
+};
+
+var COL=PH.map(function(){ return {}; });
+function initCol(i){ var c=COL[i]; c.fmt=PH[i].fmt; c.res=PH[i].res.slice(); c.plan='m'; c.ld=0; c.push=0; c.tplan=''; return c; }
+PH.forEach(function(p,i){ initCol(i); });
+
+function sb(w){ return '<div class="sb'+(w?' w':'')+'"><span>9:41</span><i class="isl"></i><span class="ic"><svg width="17" height="11" viewBox="0 0 17 11" fill="currentColor"><rect x="0" y="7" width="3" height="4" rx="1"/><rect x="4.5" y="5" width="3" height="6" rx="1"/><rect x="9" y="2.5" width="3" height="8.5" rx="1"/><rect x="13.5" y="0" width="3" height="11" rx="1"/></svg><svg width="25" height="12" viewBox="0 0 25 12" fill="none"><rect x=".5" y=".5" width="21" height="11" rx="3.5" stroke="currentColor" opacity=".4"/><rect x="2" y="2" width="18" height="8" rx="2" fill="currentColor"/></svg></span></div>'; }
+function lead(i){ return COL[i].res[0]||'pol'; }
+function picksTxt(i){ return (COL[i].res.length?COL[i].res:['pol']).map(rn).join(' · ')+' · '+fn(COL[i].fmt); }
+function topbar(i,n){ return '<div class="scr-top"><button class="k-back" data-act="back">'+BACK+'</button><div class="k-prog"><i style="width:'+(n*25)+'%"></i></div></div>'; }
+
+function scrArrive(i){
+  return '<div class="spl">'+sb(1)+'<div class="spl-in"><i class="k-f"></i><h2>F.A.Z. Kiosk</h2><p>'+L('The digital editions of the<br>Frankfurter Allgemeine Zeitung','Die digitalen Ausgaben der Frankfurter<br>Allgemeinen Zeitung')+'</p>'+
+   '<p class="new" data-hl="new">'+L('Tomorrow’s paper, every evening<br>from 18:00.','Die Zeitung von morgen,<br>jeden Abend ab 18 Uhr.')+'</p></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="start">'+L('Get started','Los geht’s')+'</button><button class="k-link" data-act="login">'+L('I already subscribe · Log in','Ich habe schon ein Abo · Login')+'</button></div></div>';
+}
+function scrFmt(i){
+  var c=COL[i];
+  function card(k,img,t,s){ return '<button class="fmc'+(c.fmt===k?' on':'')+'" data-act="fmt" data-f="'+k+'"><img src="img/'+img+'" alt=""><b>'+t+'</b><span class="rd">'+CHK+'</span><small>'+s+'</small></button>'; }
+  return sb()+topbar(i,1)+'<div class="scr-body">'+
+   '<h2 class="k-h">'+L('How do you like to read the paper?','Wie lesen Sie Ihre Zeitung am liebsten?')+'</h2><p class="k-s">'+L('You can switch any time in Profil → Ansicht.','Sie können jederzeit im Profil unter Ansicht wechseln.')+'</p>'+
+   '<div class="fmt" data-hl="fmt">'+card('ep','th-epaper.jpg',L('E-Paper (in the classic newspaper layout)','E-Paper (im klassischen Zeitungslayout)'),L('Turn the pages as printed, zoom in, or tap an article to read it.','Blättern wie gewohnt, zoomen oder Artikel antippen.'))+
+   card('ed','th-edition.jpg',L('Edition (with multimedia)','Edition (erweitert um Multimedia-Inhalte)'),L('Reading times on every piece, the top stories first.','Mit Lesedauer und den Top-Themen vorn.'))+'</div></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="fmtnext">'+L('Continue','Weiter')+'</button></div>';
+}
+function scrRes(i){
+  var c=COL[i];
+  var rows=RORD.map(function(k){ var j=c.res.indexOf(k); return '<button class="rr'+(j>-1?' on':'')+'" data-act="r" data-r="'+k+'"><span>'+rn(k)+(j===0?'<span class="nb">'+L('first','zuerst')+'</span>':'')+'</span><span class="ck">'+TICK+'</span></button>'; }).join('');
+  return sb()+topbar(i,2)+'<div class="scr-body">'+
+   '<h2 class="k-h">'+L('Which section do you read first?','Welches Ressort lesen Sie zuerst?')+'</h2><p class="k-s">'+L('Pick one or more. Your first pick leads your issue.','Wählen Sie eins oder mehrere. Das erste steht in Ihrer Ausgabe vorn.')+'</p>'+
+   '<div class="k-lbl">'+L('Sections','Ressorts')+'</div><div class="rl" data-hl="res">'+rows+'</div></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="resnext"'+(c.res.length?'':' disabled')+'>'+L('Continue','Weiter')+'</button></div>';
+}
+function scrAtt(i,sys){
+  return sb()+topbar(i,3)+'<div class="scr-body col"><div class="att"><i class="k-f"></i><h3>'+L('One question from Apple','Eine Frage von Apple')+'</h3>'+
+   '<p>'+L('Next, iOS asks whether the F.A.Z. Kiosk may use your activity for advertising. Your answer changes nothing about what you can read.','Gleich fragt iOS, ob der F.A.Z. Kiosk Ihre Aktivität für Werbung nutzen darf. Ihre Antwort ändert nichts an dem, was Sie lesen können.')+'</p></div></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="attnext">'+L('Continue','Weiter')+'</button></div>'+
+   (sys?'<div class="sys"><div class="sys-in"><div class="ai"><img src="img/icon.png" alt=""></div><h5>'+L('Allow “F.A.Z. Kiosk” to track your activity across other companies’ apps and websites?','Erlauben, dass „F.A.Z. Kiosk“ deine Aktivitäten in Apps und auf Websites anderer Firmen erfasst?')+'</h5><p>Wir benötigen Ihre Zustimmung, um Werbeanzeigen relevant zu gestalten.'+(G.lang==='en'?'<br><span style="opacity:.8">(“We need your consent to make ads relevant.”)</span>':'')+'</p><button data-act="attno">'+L('Ask App Not to Track','App bitten, kein Tracking durchzuführen')+'</button><button data-act="attok">'+L('Allow','Erlauben')+'</button></div></div>':'');
+}
+function loadLines(i){
+  var c=COL[i], rs=(c.res.length?c.res:['pol']), out=[];
+  out.push(c.fmt==='ep'?L('Setting up the <b>E-Paper</b>, page by page','Das <b>E-Paper</b> wird eingerichtet, Seite für Seite'):L('Setting up the <b>Edition</b> with reading times','Die <b>Edition</b> wird mit Lesedauer eingerichtet'));
+  out.push(L('Putting <b>'+rn(rs[0])+'</b> first','<b>'+rn(rs[0])+'</b> kommt nach vorn'));
+  if(rs[1]) out.push(L('Adding <b>'+rn(rs[1])+'</b> right after','Gleich danach: <b>'+rn(rs[1])+'</b>'));
+  out.push(L('Downloading the next issue automatically at <b>18:00</b>','Die nächste Ausgabe lädt automatisch um <b>18 Uhr</b>'));
+  return out;
+}
+function scrLoad(i){
+  var c=COL[i], ln=loadLines(i), n=c.ld||0;
+  return sb()+'<div class="scr-body col" style="padding-bottom:0"><div class="ld" data-hl="ld"><i class="k-f"></i><h3>'+L('Preparing your F.A.Z.','Ihre F.A.Z. wird vorbereitet')+'</h3>'+
+   '<div class="ld-bar"><i style="width:'+Math.round(100*n/ln.length)+'%"></i></div><div class="ld-list">'+ln.map(function(t,k){ return '<div'+(k<n?' class="ok"':'')+'><span class="ck">'+CHK+'</span><span>'+t+'</span></div>'; }).join('')+'</div></div></div>';
+}
+function scrIssue(i){
+  var c=COL[i], rs=(c.res.length?c.res:['pol']), ep=c.fmt==='ep';
+  return sb()+'<div class="scr-body">'+
+   '<h2 class="k-h" style="margin-top:6px">'+L('Your F.A.Z. is ready','Ihre F.A.Z. ist bereit')+'</h2>'+
+   '<div class="iss"><div class="cv"><img src="img/'+(ep?'cover-faz.jpg':'cover-edition.jpg')+'" alt=""></div><div class="dt"><span>'+L('Thursday, 19.11.2026','Donnerstag, 19.11.2026')+'</span><span>'+fn(c.fmt)+'</span></div></div>'+
+   '<div class="nx"><span class="clk">18:00</span><p>'+L('Friday’s issue is ready tonight from 18:00, the evening before it prints.','Die Ausgabe vom Freitag liegt heute ab 18 Uhr bereit, schon am Vortag.')+'</p></div>'+
+   '<div class="mine">'+rs.map(function(k,j){ return '<div><span>'+rn(k)+'</span><small>'+(j===0?L('first in your issue','zuerst in Ihrer Ausgabe'):L('right after','gleich danach'))+'</small></div>'; }).join('')+
+   '<div><span>'+L('Read aloud','Vorlesefunktion')+'</span><small>'+L('listen to any article','jeden Artikel anhören')+'</small></div></div></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="issnext">'+L('Continue','Weiter')+'</button></div>';
+}
+function scrPW(i){
+  var c=COL[i], p=P(), m=c.plan==='m', h=HEAD[lead(i)], fs=FSUB[c.fmt];
+  return '<div class="pw" style="position:absolute;inset:0;display:flex;flex-direction:column">'+sb()+'<div class="scr-top"><button class="k-x" data-act="x" aria-label="Close" style="margin-left:auto">'+XI+'</button></div>'+
+   '<div class="scr-body">'+
+   '<img class="pw-hero" src="img/pw-hero.jpg" alt="">'+
+   '<div class="pw-eb" data-hl="eb">'+L('F.A.Z. digital','F.A.Z. digital')+'</div><h2 class="pw-h" data-hl="head">'+L(h[0],h[1])+'</h2>'+
+   '<p class="k-s" style="margin-top:8px">'+L(fs[0],fs[1])+'</p>'+
+   '<div class="pw-chip"><span>'+L('Your pick: ','Ihre Wahl: ')+picksTxt(i)+'</span></div>'+
+   '<div class="stars" data-hl="proof"><i>★★★★★</i><span>4.5 · '+L('13,076 ratings on the App Store','13.076 Bewertungen im App Store')+'</span></div>'+
+   '<div class="plans" data-hl="plans">'+
+    '<button class="plan'+(m?' on':'')+'" data-act="plan" data-p="m"><span class="tg">'+L('Recommended','Empfohlen')+'</span><b>'+L('Monatsabo','Monatsabo')+'</b><span class="pp">'+p.m+' <small>'+L('a month for 3 months','monatlich für 3 Monate')+'</small></span><span class="then">'+L('then '+p.then+' a month','danach '+p.then+' monatlich')+'</span><span class="ds">'+L('Kombi-Abo for F.A.Z., F.A.S. and F.A.Q.','Kombi-Abo für F.A.Z., F.A.S. und F.A.Q.')+'</span></button>'+
+    '<button class="plan'+(!m?' on':'')+'" data-act="plan" data-p="o"><b>'+L('F.A.Z. single issue','F.A.Z. Einzelausgabe')+'</b><span class="pp">'+p.one+' <small>'+L('one-off purchase','Einmaliger Kauf')+'</small></span><span class="ds">'+L('One F.A.Z. issue','Einzelkauf der F.A.Z. Ausgabe')+'</span></button></div>'+
+   '<div class="cmp"><div class="hd"></div><div class="hd c">'+L('Single','Einzel')+'</div><div class="hd c">'+L('Kombi','Kombi')+'</div>'+
+    '<div>'+L('F.A.Z., Monday to Saturday','F.A.Z., Montag bis Samstag')+'</div><div class="c">'+L('one issue','eine Ausgabe')+'</div><div class="c p">'+L('every issue','jede Ausgabe')+'</div>'+
+    '<div>'+L('F.A.S., the Sunday paper','F.A.S., die Sonntagszeitung')+'</div><div class="c x">✕</div><div class="c p">✓</div>'+
+    '<div>'+L('F.A.Q., the Quarterly','F.A.Q., das Quarterly')+'</div><div class="c x">✕</div><div class="c p">✓</div></div>'+
+   '<div class="rev"><p>„Bereits am Vorabend steht die Zeitung zur Verfügung, in gewohnter sehr hoher Qualität und vollem Umfang; ein echtes Lesevergnügen, das ich nicht mehr missen möchte.“</p>'+(G.lang==='en'?'<p class="tr">“The paper is there the evening before, in the usual very high quality and in full; a real pleasure I would not want to miss.”</p>':'')+'<small>HmK55 · App Store</small></div>'+
+   '<div class="legal"><h6>'+L('More information','Weitere Informationen')+'</h6>'+L('Payment is charged to your App Store account. A subscription renews automatically unless auto-renew is turned off at least 24 hours before the end of the current period. Manage it in your App Store account settings.','Die Zahlung erfolgt über Ihren App Store-Account. Das Abonnement verlängert sich automatisch, sofern Sie nicht spätestens 24 Stunden vor Ablauf des aktuellen Abrechnungszeitraums kündigen. Abonnements können in Ihrem App Store-Account verwaltet werden.')+'</div></div>'+
+   '<div class="scr-foot sep"><button class="k-btn" data-act="buy">'+(m?L('Choose and pay · '+p.m+' a month','Wählen und bezahlen · '+p.m+' monatlich'):L('Choose and pay · '+p.one,'Wählen und bezahlen · '+p.one))+'</button><p class="fcap">'+(m?L('Then '+p.then+' a month from month 4. Cancel in your App Store account.','Ab Monat 4: '+p.then+' monatlich. Kündbar im App Store-Account.'):L('One issue, yours to keep. No subscription.','Eine Ausgabe, ohne Abonnement.'))+'</p><div class="flk"><span data-act="login">Login</span><span data-act="restore">'+L('Restore purchases','In-App Käufe wiederherstellen')+'</span></div></div></div>';
+}
+function scrToday(i){
+  var c=COL[i], p=P(), sel=c.tplan;
+  return '<div class="pw" style="position:absolute;inset:0;display:flex;flex-direction:column">'+sb()+'<div class="scr-top"><button class="k-back" data-act="tx">'+BACK+L('Back','Zurück')+'</button></div>'+
+   '<div class="scr-body">'+
+   '<img class="pw-hero" src="img/pw-hero.jpg" alt="">'+
+   '<h2 class="t-h">'+L('Choose your offer for the digital edition','Wählen Sie Ihr Angebot für die digitale Ausgabe')+'</h2>'+
+   '<button class="t-plan'+(sel==='m'?' on':'')+'" data-act="tplan" data-p="m"><b>Monatsabo</b><span class="tg">'+L('Recommended','Empfohlen')+'</span><div class="pr"><strong>'+p.m+'</strong>'+L('a month for 3 months','monatlich für 3 Monate')+'<small>'+L('Then '+p.then+'/month','Dann '+p.then+'/Monat')+'</small></div><span class="ds">'+L('Kombi-Abo for F.A.Z., F.A.S and F.A.Q.','Kombi-Abo für F.A.Z., F.A.S und F.A.Q.')+'</span></button>'+
+   '<button class="t-plan'+(sel==='o'?' on':'')+'" data-act="tplan" data-p="o"><b>'+L('F.A.Z. single issue','F.A.Z. Einzelausgabe')+'</b><div class="pr"><strong>'+p.one+'</strong>'+L('One-off purchase','Einmaliger Kauf')+'</div><span class="ds">'+L('Single purchase of the F.A.Z. issue','Einzelkauf der F.A.Z. Ausgabe')+'</span></button>'+
+   '<div class="t-info"><h6>'+L('More information','Weitere Informationen')+'</h6>'+L('Our general terms and our privacy policy apply to single purchases and subscriptions. Payment is made through your App Store account and is due immediately or in advance. With a subscription you get full access to the F.A.Z. Kiosk app for the chosen billing period. The subscription renews automatically unless auto-renew is turned off at least 24 hours before the end of the current period.','Für Einzelkäufe und Abonnements gelten unsere Allgemeinen Geschäftsbedingungen sowie unsere Datenschutzerklärung. Die Zahlung erfolgt über Ihren App Store-Account und ist sofort bzw. im Voraus fällig. Mit Abschluss eines Abonnements erhalten Sie vollständigen Zugriff auf die F.A.Z.-Kiosk App für den jeweils gewählten Abrechnungszeitraum. Das Abonnement verlängert sich automatisch, sofern es nicht spätestens 24 Stunden vor Ablauf des aktuellen Abrechnungszeitraums kündigen oder die automatische Verlängerung deaktivieren.')+'</div>'+
+   '<div class="cap-today">'+L('Reached by tapping a locked issue on the shelf.<br>Same screen for every reader. Nothing selected.','Erreicht durch Tippen auf eine gesperrte Ausgabe.<br>Gleich für alle. Nichts vorausgewählt.')+'</div></div>'+
+   '<div class="scr-foot"><button class="k-btn" data-act="tbuy"'+(sel?'':' disabled')+'>'+L('Choose and pay','Wählen und bezahlen')+'</button><div class="flk" style="flex-direction:column;align-items:center;gap:12px;margin-top:14px"><span>Login</span><span>'+L('Restore in-app purchases','In-App Käufe wiederherstellen')+'</span></div></div></div>';
+}
+function scrHome(i){
+  var c=COL[i];
+  var push=c.push===0?'<div class="pushc" data-hl="push"><span class="clk">18:00</span><div><p>'+L('Get a note when tomorrow’s issue is ready, every evening at 18:00?','Benachrichtigung, sobald die Ausgabe von morgen bereitliegt, jeden Abend um 18 Uhr?')+'</p><div class="bt"><button class="y" data-act="pushy">'+L('Notify me','Benachrichtigen')+'</button><button class="n" data-act="pushn">'+L('Not now','Später')+'</button></div></div></div>':'';
+  return sb()+'<div class="hm-top">'+SV('<circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/>')+'<i class="k-wm"></i>'+SV('<circle cx="12" cy="8" r="4"/><path d="M4 21a8 8 0 0 1 16 0"/>')+'</div>'+
+   '<div class="scr-body"><p class="hm-sw"><b>'+L('Switch view:','Ansicht wechseln:')+'</b> <u>'+(c.fmt==='ep'?L('To the multimedia view','Zur multimedialen Ansicht'):L('To the E-Paper view','Zur E-Paper-Ansicht'))+'</u></p>'+push+
+   '<div class="shl">'+L('Daily paper','Tageszeitung')+'</div><div class="shelf"><div><img src="img/'+(c.fmt==='ep'?'cover-faz.jpg':'cover-edition.jpg')+'" alt=""><span>'+L('Thursday, 19.11.2026','Donnerstag, 19.11.2026')+'</span></div><div><img src="img/cover-faz2.jpg" alt=""><span>'+L('Wednesday, 18.11.2026','Mittwoch, 18.11.2026')+'</span></div></div>'+
+   '<div class="shl red">'+L('Sunday paper','Sonntagszeitung')+'</div><div class="shelf"><div><img src="img/cover-fas.jpg" alt=""><span>'+L('Sunday paper','Sonntagszeitung')+'</span></div><div><img src="img/cover-fas-dark.jpg" alt=""><span>F.A.S.</span></div></div></div>'+
+   '<div class="tabbar"><div class="on"><i class="k-f"></i>'+L('Paper','Zeitung')+'</div><div>'+SV('<rect x="8" y="3" width="13" height="13" rx="1"/><path d="M16 16v5H3V8h5"/>')+L('Library','Bibliothek')+'</div><div>'+SV('<path d="M6 3h12v18l-6-5-6 5z"/>')+L('Saved','Merkzettel')+'</div><div>'+SV('<path d="M4 15v-3a8 8 0 0 1 16 0v3"/><rect x="3" y="14" width="4" height="6" rx="1"/><rect x="17" y="14" width="4" height="6" rx="1"/>')+'Podcasts</div><div>'+SV('<rect x="3" y="3" width="18" height="18" rx="2"/><path d="M9 3v18M15 3v18M3 9h18M3 15h18"/>')+L('Games','Spiele')+'</div></div>'+
+   (c.push===2?'<div class="sys"><div class="sys-in"><div class="ai"><img src="img/icon.png" alt=""></div><h5>'+L('“F.A.Z. Kiosk” Would Like to Send You Notifications','„F.A.Z. Kiosk“ möchte dir Mitteilungen senden')+'</h5><p>'+L('Notifications may include alerts, sounds, and icon badges. These can be configured in Settings.','Mitteilungen können Hinweise, Töne und Kennzeichensymbole enthalten. Diese können in den Einstellungen konfiguriert werden.')+'</p><button data-act="pushdeny">'+L('Don’t Allow','Nicht erlauben')+'</button><button data-act="pushok">'+L('Allow','Erlauben')+'</button></div></div>':'');
+}
+
+function stepScr(st){ return st; }
+function phoneHTML(i){
+  var c=COL[i], s=c.scr, inner;
+  if(s==='arrive') inner=scrArrive(i); else if(s==='fmt') inner=scrFmt(i); else if(s==='res') inner=scrRes(i);
+  else if(s==='att') inner=scrAtt(i,0); else if(s==='attsys') inner=scrAtt(i,1); else if(s==='load') inner=scrLoad(i);
+  else if(s==='issue') inner=scrIssue(i); else if(s==='today') inner=scrToday(i); else if(s==='home') inner=scrHome(i); else inner=scrPW(i);
+  return '<div class="phone'+(G.theme==='light'?' lt':'')+'"><section class="scr" data-s="'+s+'">'+inner+'<div class="toast"></div></section></div>';
+}
+function drawCol(i,keep){
+  var box=$('#trio .tcol[data-i="'+i+'"] .pbox'); if(!box) return;
+  var ph=box.querySelector('.phone'), b=box.querySelector('.scr-body'), y=b?b.scrollTop:0;
+  var tmp=document.createElement('div'); tmp.innerHTML=phoneHTML(i);
+  if(ph) box.replaceChild(tmp.firstChild,ph); else box.insertBefore(tmp.firstChild,box.firstChild);
+  if(keep){ var nb=box.querySelector('.scr-body'); if(nb) nb.scrollTop=y; }
+  if(COL[i].scr==='load') runLoad(i);
+}
+function go(i,s){ var c=COL[i]; clearTimeout(c.lt); c.scr=s; if(s==='load') c.ld=0; drawCol(i); }
+function runLoad(i){
+  var c=COL[i], n=loadLines(i).length, k=walk.on?0.5:1;
+  clearTimeout(c.lt);
+  c.lt=setTimeout(function step(){
+    if(c.scr!=='load') return;
+    if(c.ld<n){ c.ld++; var box=$('#trio .tcol[data-i="'+i+'"]'); $$('.ld-list div',box).forEach(function(d,j){ d.classList.toggle('ok',j<c.ld); }); var bar=$('.ld-bar i',box); if(bar) bar.style.width=Math.round(100*c.ld/n)+'%'; c.lt=setTimeout(step,620*k); }
+    else { c.lt=setTimeout(function(){ if(c.scr==='load') go(i,'issue'); },500*k); }
+  },420*k);
+}
+function pillText(i){ return picksTxt(i); }
+function renderTrio(){
+  $('#trio').innerHTML=PH.map(function(p,i){
+    return '<div class="tcol" data-i="'+i+'" style="--ring:'+p.ring+'"><div class="apill"><span class="mt">'+p.mt+'</span><span class="tx">'+pillText(i)+'</span></div><div class="pbox"><i class="finger"></i></div><div class="tlab"><b>'+p.lab[0]+'</b><span>'+p.lab[1]+'</span></div></div>';
+  }).join('');
+  PH.forEach(function(p,i){ drawCol(i); });
+}
+function paintSteps(){ $$('#steps button').forEach(function(b){ b.classList.toggle('on',b.dataset.st===G.step); }); $('#stcap').innerHTML=TCAP[G.step]||''; $$('#trio .tcol').forEach(function(t){ t.classList.toggle('ring',G.step!=='today'); }); }
+function setStep(st){ G.step=st; PH.forEach(function(p,i){ initCol(i); COL[i].scr=stepScr(st); }); paintSteps(); PH.forEach(function(p,i){ clearTimeout(COL[i].lt); drawCol(i); $('#trio .tcol[data-i="'+i+'"] .apill .tx').textContent=pillText(i); }); }
+function toast(i,m){ var e=$('#trio .tcol[data-i="'+i+'"] .toast'); if(!e) return; e.textContent=m; e.classList.add('show'); clearTimeout(e._t); e._t=setTimeout(function(){ e.classList.remove('show'); },1900); }
+var PREV={fmt:'arrive',res:'fmt',att:'res',attsys:'att',issue:'res',pw:'issue'};
+
+/* taps inside a phone change only that phone */
+document.addEventListener('click',function(e){
+  var t=e.target.closest('[data-act]'); if(!t) return; var col=t.closest('.tcol'); if(!col) return;
+  var i=+col.dataset.i, c=COL[i], a=t.dataset.act;
+  if(a==='start') go(i,'fmt');
+  else if(a==='login') toast(i,L('Your F.A.Z. login opens here','Hier öffnet sich Ihr F.A.Z.-Login'));
+  else if(a==='restore') toast(i,L('Restores in-app purchases','Stellt In-App-Käufe wieder her'));
+  else if(a==='back'){ if(PREV[c.scr]) go(i,PREV[c.scr]); }
+  else if(a==='fmt'){ c.fmt=t.dataset.f; drawCol(i,true); $('.apill .tx',col).textContent=pillText(i); }
+  else if(a==='fmtnext') go(i,'res');
+  else if(a==='r'){ var k=t.dataset.r, j=c.res.indexOf(k); if(j>-1) c.res.splice(j,1); else c.res.push(k); drawCol(i,true); $('.apill .tx',col).textContent=pillText(i); }
+  else if(a==='resnext'){ if(c.res.length) go(i,'att'); }
+  else if(a==='attnext') go(i,'attsys');
+  else if(a==='attok'||a==='attno') go(i,'load');
+  else if(a==='issnext') go(i,'pw');
+  else if(a==='plan'){ c.plan=t.dataset.p; drawCol(i,true); }
+  else if(a==='tplan'){ c.tplan=t.dataset.p; drawCol(i,true); }
+  else if(a==='buy'||a==='tbuy') toast(i,L('Apple’s purchase sheet opens here','Hier öffnet sich Apples Kaufdialog'));
+  else if(a==='x'){ go(i,'home'); toast(i,L('Closed straight onto the shelf. No second offer.','Direkt zum Kiosk. Kein zweites Angebot.')); }
+  else if(a==='tx') toast(i,L('Today Zurück goes back to the shelf','Heute führt Zurück zum Kiosk'));
+  else if(a==='pushy'){ c.push=2; drawCol(i,true); }
+  else if(a==='pushn'){ c.push=1; drawCol(i,true); toast(i,L('Asked again from Profil → Push-Mitteilungen','Später im Profil unter Push-Mitteilungen'));}
+  else if(a==='pushok'||a==='pushdeny'){ c.push=1; drawCol(i,true); toast(i,a==='pushok'?L('Tomorrow’s issue: a note at 18:00','Morgen um 18 Uhr: Ihre Ausgabe'):L('No notifications. Nothing else changes.','Keine Mitteilungen. Sonst ändert sich nichts.')); }
+});
+
+function fit(){ var w=document.documentElement.clientWidth||innerWidth; if(w<300) w=Math.max(w,(screen&&screen.width)||390,320); var sc=w>=1240?0.8:w>=900?(w-160)/(3*390):(w-48)/390; sc=Math.min(0.8,Math.max(0.42,sc)); $('#trio').style.setProperty('--sc',sc.toFixed(3)); }
+
+/* ---- idea cards and list ---- */
+function ideaRow(d){ return '<div class="row"><span class="out">'+d.o+' <small>'+d.u+'</small></span><span class="see">See it on the phones →</span></div>'; }
+$('#ideas').innerHTML=IDEAS.map(function(d,i){ return '<div class="idea" data-idea="'+i+'"><div class="n">Idea '+(i+1)+' of 5</div><h3>'+d.t+'</h3><p>'+d.p+'</p>'+ideaRow(d)+'<div class="kept">'+d.kept+'</div></div>'; }).join('');
+$('#list').innerHTML=IDEAS.map(function(d,i){ return '<div class="it" data-idea="'+i+'"><div class="em">0'+(i+1)+'</div><div><h3>'+d.t+'</h3><p>'+d.p+'</p>'+ideaRow(d)+'</div></div>'; }).join('');
+function showIdea(n){
+  var d=IDEAS[n]; stopWalk(); showView('pw'); setStep(d.st);
+  setTimeout(function(){
+    $('#trio').scrollIntoView({behavior:'smooth',block:'start'});
+    $$('#trio [data-hl="'+d.hl+'"]').forEach(function(el){
+      var b=el.closest('.scr-body'); if(b) b.scrollTop=Math.max(0,el.offsetTop-120);
+      el.classList.remove('pulse'); void el.offsetWidth; el.classList.add('pulse');
+    });
+  },80);
+}
+document.addEventListener('click',function(e){ var c=e.target.closest('[data-idea]'); if(c) showIdea(+c.dataset.idea); });
+document.addEventListener('click',function(e){ var b=e.target.closest('[data-adgo]'); if(!b) return; stopWalk(); showView('pw'); setStep('arrive');
+  setTimeout(function(){ var col=$('#trio .tcol[data-i="'+b.dataset.adgo+'"]'); col.scrollIntoView({behavior:'smooth',block:'center',inline:'center'}); var ph=col.querySelector('.phone'); ph.classList.remove('pulse'); void ph.offsetWidth; ph.classList.add('pulse'); },80); });
+
+/* ---- views ---- */
+function showView(v){ $$('.view').forEach(function(x){ x.classList.remove('on'); }); $('#view-'+v).classList.add('on'); $$('.tabs button').forEach(function(b){ b.classList.toggle('on',b.dataset.v===v); });
+  if(v!=='pw') stopWalk();
+  var q=new URLSearchParams(location.search); q.delete('open'); if(v==='pw') q.set('view','proto'); else q.delete('view'); history.replaceState(null,'',location.pathname+(q.toString()?'?'+q:'')); scrollTo(0,0); fit(); }
+$$('.tabs button').forEach(function(b){ b.addEventListener('click',function(){ showView(b.dataset.v); }); });
+$$('[data-open]').forEach(function(b){ b.addEventListener('click',function(){ showView(b.dataset.open); }); });
+$$('#steps button').forEach(function(b){ b.addEventListener('click',function(){ stopWalk(); setStep(b.dataset.st); }); });
+$$('#theme button').forEach(function(b){ b.addEventListener('click',function(){ G.theme=b.dataset.th; $$('#theme button').forEach(function(x){ x.classList.toggle('on',x===b); }); $$('#trio .phone').forEach(function(p){ p.classList.toggle('lt',G.theme==='light'); }); }); });
+
+/* ---- the 30-second walkthrough: drives the real phones ---- */
+var walk={on:false,tok:0};
+function wait(ms,tk){ return new Promise(function(res,rej){ setTimeout(function(){ tk===walk.tok?res():rej('stop'); },ms); }); }
+function cap(t,p){ $('#dtx').textContent=t; $('#dpr').style.width=p+'%'; }
+async function tap(i,sel,tk){
+  var col=$('#trio .tcol[data-i="'+i+'"]'), box=$('.pbox',col), el=$(sel,box), f=$('.finger',box); if(!el) return;
+  var b=box.getBoundingClientRect(), r=el.getBoundingClientRect();
+  f.classList.add('on'); f.style.left=(r.left-b.left+r.width/2)+'px'; f.style.top=(r.top-b.top+r.height/2)+'px';
+  await wait(380,tk); f.classList.add('press'); await wait(120,tk); f.classList.remove('press'); el.click(); await wait(160,tk);
+}
+function all(s){ PH.forEach(function(p,i){ if(i!==1) go(i,s); }); }
+async function scrollTo2(i,sel,tk){ var box=$('#trio .tcol[data-i="'+i+'"] .pbox'), b=$('.scr-body',box), el=$(sel,box); if(!b||!el) return; var to=Math.max(0,el.offsetTop-90), fr=b.scrollTop, t0=performance.now(); while(true){ var k=Math.min(1,(performance.now()-t0)/600); b.scrollTop=fr+(to-fr)*(1-Math.pow(1-k,3)); if(k>=1) break; await wait(16,tk); } }
+async function startWalk(){
+  stopWalk(); var tk=++walk.tok; walk.on=true; showView('pw'); $('#dcap').classList.add('on'); $('#wt').classList.add('on'); $('#wt').textContent='■ Stop walkthrough';
+  var t0=performance.now();
+  try{
+    setStep('arrive'); $('#trio').scrollIntoView({behavior:'smooth',block:'center'});
+    cap('Three new readers open the Kiosk. Your splash now says when the paper arrives.',6); await wait(1800,tk);
+    await tap(1,'[data-act=start]',tk); all('fmt');
+    cap('E-Paper or Edition, from Profil → Ansicht, asked on day one.',18); await wait(700,tk);
+    await tap(1,'[data-f=ep]',tk); await wait(350,tk); await tap(1,'[data-f=ed]',tk); await wait(250,tk);
+    await tap(1,'[data-act=fmtnext]',tk); all('res');
+    cap('Which section first. The finance reader keeps Finanzen.',30); await wait(600,tk);
+    await tap(1,'[data-r=spo]',tk); await wait(350,tk); await tap(1,'[data-r=spo]',tk); await wait(200,tk);
+    await tap(1,'[data-act=resnext]',tk); all('att');
+    cap('Tracking stays early and on its own.',40); await wait(700,tk);
+    await tap(1,'[data-act=attnext]',tk); all('attsys'); await wait(400,tk);
+    await tap(1,'[data-act=attok]',tk); all('load');
+    cap('The loader reads each answer back while it works.',52); await wait(2500,tk);
+    PH.forEach(function(p,i){ if(COL[i].scr!=='issue') go(i,'issue'); });
+    cap('Today’s issue in their format, and when tomorrow’s arrives.',62); await wait(1300,tk);
+    await tap(1,'[data-act=issnext]',tk); all('pw');
+    cap('The offer names their section and format, with your 4.5 stars.',72); await wait(1900,tk);
+    await Promise.all(PH.map(function(p,i){ return scrollTo2(i,'[data-hl=plans]',tk); }));
+    cap('Monatsabo selected, 54,90 € from month four on its own line.',82); await wait(600,tk);
+    await tap(1,'[data-p=o]',tk); await wait(450,tk); await tap(1,'[data-p=m]',tk); await wait(900,tk);
+    cap('✕ goes straight onto the shelf. No second offer.',90); await tap(1,'[data-act=x]',tk); all('home'); await wait(1300,tk);
+    cap('Only now: notifications, tied to 18:00.',96); await tap(1,'[data-act=pushy]',tk); await wait(500,tk); await tap(1,'[data-act=pushok]',tk); await wait(1300,tk);
+    cap('That’s the flow. Tap any phone to try it yourself.',100); console.log('walkthrough ms',Math.round(performance.now()-t0));
+    await wait(1400,tk); stopWalk(); setStep('pw');
+  }catch(e){}
+}
+function stopWalk(){ if(!walk.on) return; walk.on=false; walk.tok++; $('#dcap').classList.remove('on'); $('#wt').classList.remove('on'); $('#wt').textContent='▶ 30-second walkthrough'; $$('.finger').forEach(function(f){ f.classList.remove('on'); }); }
+$$('[data-walk]').forEach(function(b){ b.addEventListener('click',function(){ if(walk.on&&b.id==='wt'){ stopWalk(); return; } startWalk(); }); });
+document.addEventListener('pointerdown',function(e){ if(!walk.on||!e.isTrusted) return; if(e.target.closest('#wt')) return; if(e.target.closest('#trio,#steps,#theme,.tabs,.nav')) stopWalk(); },true);
+
+/* hero: newspaper columns drifting up, from the front page of 19 November 2026 */
+(function(){
+  var hl=['CDU pocht auf dauerhafte Senkung der Stromsteuer','Ukraine zerstört Teile einer Brücke von Russland','BSW scheitert mit Antrag auf Neuauszählung','Berliner Grüne: Verhandlung','Zeitung für Deutschland'];
+  var sec=['Politik','Wirtschaft','Finanzen','Feuilleton','Sport','Deutschland und die Welt'];
+  var h='';
+  for(var c=0;c<6;c++){
+    var col='';
+    for(var r=0;r<2;r++){ for(var k=0;k<5;k++){ var n=(c*3+k)%hl.length; col+='<b>'+sec[(c+k)%sec.length]+'</b><span>'+hl[n]+'</span>'; for(var l=0;l<5+((c+k)%4);l++) col+='<i style="width:'+(70+((c*7+k*13+l*17)%30))+'%"></i>'; } }
+    h+='<div class="pcol" style="animation-duration:'+(70+c*9)+'s;animation-delay:-'+(c*11)+'s">'+col+'</div>';
+  }
+  $('#press').innerHTML=h;
+})();
+
+PH.forEach(function(p,i){ COL[i].scr=stepScr(G.step); });
+renderTrio(); fit(); paintSteps(); addEventListener('resize',fit); addEventListener('load',fit); addEventListener('pageshow',fit); if(window.ResizeObserver) new ResizeObserver(fit).observe(document.documentElement);
+(function(){ var q=new URLSearchParams(location.search); if(q.get('view')==='proto'||q.get('open')==='proto') showView('pw'); if(q.get('step')) setStep(q.get('step')); })();
+</script>
+<script>
+/* GitHub Pages lets browsers keep this page for 10 minutes; if a newer build is live, reload onto it */
+var BUILD='f1';
+fetch(location.pathname+'?cb='+Date.now(),{cache:'no-store'}).then(function(r){ return r.text(); }).then(function(h){
+  var m=h.match(/var BUILD='([^']+)'/); if(m && m[1]!==BUILD){ var q=new URLSearchParams(location.search); q.set('v',m[1]); location.replace(location.pathname+'?'+q.toString()); }
+}).catch(function(){});
+</script>
+</body>
+</html>
